@@ -19,7 +19,7 @@ export default function Draw() {
     context.scale(2, 2);
     context.lineCap = 'round';
     context.strokeStyle = 'black';
-    context.lineWidth = 20;
+    context.lineWidth = 25;
     contextRef.current = context;
   }, []);
 
@@ -57,20 +57,35 @@ export default function Draw() {
     let image = new Image(28, 28);
     var resizedCanvas = document.createElement('canvas');
     var resizedContext = resizedCanvas.getContext('2d');
-    resizedCanvas.height = '28';
-    resizedCanvas.width = '28';
+    resizedCanvas.height = 28;
+    resizedCanvas.width = 28;
 
     resizedContext.drawImage(canvas, 0, 0, 28, 28);
-    image = resizedCanvas.toDataURL('image.png');
-    window.location.href = image;
+    //image = resizedCanvas.toDataURL('image.png');
 
-    //turn image to a tensor
-    let tfTensor = tf.browser.fromPixels(resizedCanvas, 1);
-    tfTensor = tfTensor.squeeze();
+    const imageData = resizedContext.getImageData(0, 0, 28, 28);
+    const pixelData = imageData.data;
+    console.log(imageData);
+    console.log(pixelData);
+
+    const grayscalePixelData = new Uint8Array(28 * 28);
+    let grayscaleIndex = 0;
+
+    for (let i = 0; i < pixelData.length; i += 4) {
+      const alpha = pixelData[i + 3];
+
+      // Use alpha value as grayscale value
+      grayscalePixelData[grayscaleIndex++] = alpha;
+    }
+    console.log(grayscalePixelData);
+    // Convert canvas to grayscale using TensorFlow.js
+    let tfTensor = tf.tensor(grayscalePixelData, [1, 28, 28]);
     tfTensor = tfTensor.div(255.0);
-    tfTensor = tfTensor.expandDims(0);
     tfTensor = tfTensor.cast('float32');
+    //tfTensor.print();
     console.log(tfTensor.shape);
+    tfTensor.max().print();
+    tfTensor.min().print();
 
     //run image through model
     let result = model.predict(tfTensor);
